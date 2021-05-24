@@ -8,10 +8,11 @@ with open("../stegano/zen.txt", 'r') as f:
 
 print(zen)
 print('==========')
+# zen = 'a'
+img1 = strwrite(zen, bits=4, hamming=True)
+# plt.imshow(img1)
+# plt.show()
 
-img = strwrite(zen)
-plt.imshow(img)
-plt.show()
-
-string = strread(img)
-print('decoded info:\n', string)
+str1 = strread(img1, bits=4, hamming=True)
+# print('decoded info:\n', string)
+str2 = strread(strwrite('hello world!'))

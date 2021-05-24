@@ -5,7 +5,7 @@ from typing import Union
 from warnings import warn
 
 from utils import msb, resize, str_to_data
-from hamming import encode
+from hamming import encode, str_pad
 
 sevilla = np.asarray(Image.open('../img/sevilla.jpg'))
 sherlock = np.asarray(Image.open('../img/sherlock.jpg'))
@@ -14,7 +14,8 @@ sherlock = np.asarray(Image.open('../img/sherlock.jpg'))
 def imgwrite(info: np.ndarray = sherlock, target: np.ndarray = sevilla, bits: int = 4,
              interp=Image.BILINEAR) -> Union[bool, np.ndarray]:
     """
-    Encrypt info into an image.
+    Encrypt info into an image. If the dimension of the image to be encrypted and the target is not compatible,
+    the info image is automatically stretched.
 
     :param info: The image to be encrypted, sherlock.jpg by default
     :param target: The image into which the info is encrypted, sevilla.jpg by default
@@ -37,15 +38,19 @@ def imgwrite(info: np.ndarray = sherlock, target: np.ndarray = sevilla, bits: in
 
 def strwrite(info: str, target=sevilla, bits: int = 4, hamming=False, n: int = 2) -> np.ndarray:
     """
-    Encrypt string into an image.
-    :param info: The information to be encoded into the target image, must be str type
+    Encrypt string into an image. In the outermost loop, write the data into the highest bit, then the second highest
+    bit, all the way down to the 0th it. The pixels are flattened in Fortran style, therefore the information is
+    firstly write along each channel, then each column, then each row. bit -> channel -> column -> row
+
+    :param info: The information to be encoded into the target image, must be str type.
     :param target: The target image, sevilla.jpg by default.
-    :param bits:
+    :param bits: The number of the least significant bits used for encrypting information.
     :param hamming: If True, hamming encoding is introduced, False by default.
-    :param n:
+    :param n: The dimension of the hamming data block is specified by 2 ** n, or n << 1
+    :return The image with the information encrpyted in.
     """
 
-    blocks = np.array(str_to_data(info))
+    blocks = str_to_data(str_pad(info) if hamming else info)
     if hamming:
         blocks = encode(blocks, n)
     if blocks.size // bits > target.size:

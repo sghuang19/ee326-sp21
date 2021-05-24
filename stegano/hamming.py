@@ -5,21 +5,23 @@ from functools import reduce
 import numpy as np
 
 
-def encode(data: np.ndarray, n: int = 2):
+def encode(data: np.ndarray, n: int = 2) -> np.ndarray:
     """
     Encoding data into several data blocks of size n by n, with hamming redundant bits
     If the size of the data is not enough to fill the last block, zeros are padded
+
     :param data: the input data series
     :param n: The size of the data block is specified as 2 ** n, or 1 << n
     """
 
-    data_bits = (1 << 2 * n) - (n << 1) - 1
-    if data.size % data_bits:
+    _data_bits = data_bits(n)
+    _data = data.flatten()
+    if data.size % _data_bits:
         warn("Not enough data bits, zero-padding is automatically introduced.")
-        _data = np.append(data.flat, [0] * ((data.size // data_bits + 1) * data_bits - data.size))
-    else:
-        _data = np.array(data.flat)
-    return np.array([encode_block(_data[i:i + data_bits]) for i in range(0, _data.size, data_bits)])
+        _data = np.append(_data, np.zeros(_data_bits - (data.size - 1) % _data_bits - 1)
+                          ).astype(np.uint8)
+    _data = _data.reshape(-1, _data_bits)
+    return np.array([encode_block(block) for block in _data])
 
 
 def encode_block(data: np.ndarray) -> Union[np.ndarray, bool]:
@@ -58,29 +60,33 @@ def encode_block(data: np.ndarray) -> Union[np.ndarray, bool]:
 def decode(blocks: np.ndarray, n: int = 2) -> np.ndarray:
     """
     Decode the data blocks. Automatic zero-padding takes place when the bits are not enough.
+
     :param blocks: The blocks series to be decoded.
     :param n: The size of each data block is specified as 2 ** n, or 1 << n
     :return The decoded data
     """
 
-    if blocks.size % 1 << 2 * n:
+    block_size = 1 << (n << 1)
+    if blocks.size % block_size:
         warn("Not enough bits, zero-padding is automatically introduced.")
-        _blocks = np.append(blocks.flat, [0] * (blocks.size // (1 << 2 * n) + 1) * (1 << 2 * n) - blocks.size)
+        _blocks = np.append(blocks.flat, np.zeros(block_size - (blocks.size - 1) % block_size - 1))
     else:
-        _blocks = np.array(blocks.flat)
-    return np.array([decode_block(_blocks[i:i + 1 << 2 * n]) for i in range(0, _blocks.size, 1 << 2 * n)])
+        _blocks = blocks.flatten()
+    _blocks = _blocks.reshape(-1, 1 << (n << 1))
+    return np.array([decode_block(block) for block in _blocks])
 
 
 def decode_block(block: np.ndarray) -> Union[np.ndarray, bool]:
     """
     Decode a data block with hamming parity bits.
+
     :param block: The data block to be decoded
     :return the decoded data bits, False if the block is invalid
     """
 
     if not block.size & block.size - 1 and block.size & 0x5555_5555:
         _block = np.array(block.flat)
-        flip = reduce(lambda x, y: x ^ y, [i for i, bit in enumerate(_block) if bit])
+        flip = reduce(lambda x, y: x ^ y, [i for i, bit in enumerate(_block) if bit] + [1, 1])
 
         if flip:
             warn("Single bit-flip at index {} corrected".format(flip))
@@ -92,3 +98,27 @@ def decode_block(block: np.ndarray) -> Union[np.ndarray, bool]:
 
     warn('Invalid block size.')
     return False
+
+
+def data_bits(n: int = 2):
+    """
+    Calculate the data bits in one hamming data block.
+
+    :param n: The dimension of the hamming data block is specified by 2 ** n or n << 1
+    :return: The number of valid data bits carrying information in one hamming data block.
+    """
+
+    return (1 << 2 * n) - (n << 1) - 1
+
+
+def str_pad(info: str, n: int = 2) -> str:
+    """
+    Pad a string with protective [NUL] character \x00 to avoid wraparound errors in steganography when hamming encoding
+    is enabled.
+
+    :param info: The string to be padded
+    :param n: The size of the hamming block is specified by 2 ** n, or n << 1
+    :return: The padded string.
+    """
+
+    return info + '\x00' * (data_bits(n) - (len(info) - 1) % data_bits(n) - 1)
