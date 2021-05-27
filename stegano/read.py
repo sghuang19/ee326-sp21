@@ -18,7 +18,7 @@ def imgread(img: np.ndarray, bits: int = 4, random: bool = True) -> Union[bool, 
     """
 
     if not isinstance(img, np.ndarray):
-        warn('Incompatible data type, numpy.ndarray is required.')
+        warn('Incompatible data mode, numpy.ndarray is required.')
         return False
 
     return (lsb(img, bits) << bits) + (np.random.randint(0, 15, size=img.size).reshape(img.shape) if random else 0)

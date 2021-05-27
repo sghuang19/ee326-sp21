@@ -9,6 +9,7 @@ from hamming import encode, str_pad
 
 sevilla = np.asarray(Image.open('../img/sevilla.jpg'))
 sherlock = np.asarray(Image.open('../img/sherlock.jpg'))
+lena = np.asarray(Image.open('../img/lena512color.tiff'))
 
 
 def imgwrite(info: np.ndarray = sherlock, target: np.ndarray = sevilla, bits: int = 4,
@@ -21,11 +22,11 @@ def imgwrite(info: np.ndarray = sherlock, target: np.ndarray = sevilla, bits: in
     :param target: The image into which the info is encrypted, sevilla.jpg by default
     :param bits: The number of least significant bits chosen, 4 by default
     :param interp: The interpolation method, would be used when automatically resize takes place, BILINEAR by default
-    :return: The image with encrypted information, in numpy.ndarray type, False if encryption failed
+    :return: The image with encrypted information, in numpy.ndarray mode, False if encryption failed
     """
 
     if not isinstance(info, np.ndarray) or not isinstance(target, np.ndarray):
-        warn('Incompatible data type, numpy.ndarray is required.')
+        warn('Incompatible data mode, numpy.ndarray is required.')
         return False
 
     _info = np.array(info)
@@ -36,13 +37,13 @@ def imgwrite(info: np.ndarray = sherlock, target: np.ndarray = sevilla, bits: in
     return (msb(target, bits) << bits) + msb(_info, bits)
 
 
-def strwrite(info: str, target=sevilla, bits: int = 4, hamming=False, n: int = 2) -> np.ndarray:
+def strwrite(info: str, target=lena, bits: int = 4, hamming=False, n: int = 2) -> np.ndarray:
     """
     Encrypt string into an image. In the outermost loop, write the data into the highest bit, then the second highest
     bit, all the way down to the 0th it. The pixels are flattened in Fortran style, therefore the information is
     firstly write along each channel, then each column, then each row. bit -> channel -> column -> row
 
-    :param info: The information to be encoded into the target image, must be str type.
+    :param info: The information to be encoded into the target image, must be str mode.
     :param target: The target image, sevilla.jpg by default.
     :param bits: The number of the least significant bits used for encrypting information.
     :param hamming: If True, hamming encoding is introduced, False by default.

@@ -91,7 +91,7 @@ In our implementation, the information image encoded into the target image must 
 ```python
 def resize(info: np.ndarray, size=None, target: np.ndarray = None, interp=Image.BILINEAR) -> np.ndarray:
     """
-    Resize the info image into the size specified. The image is firstly converted into Pillow.Image type, then the
+    Resize the info image into the size specified. The image is firstly converted into Pillow.Image mode, then the
     builtin resize function is invoked.
     Be REALLY CAREFUL about the different convention of dimension in Pillow and NumPy
 
@@ -99,7 +99,7 @@ def resize(info: np.ndarray, size=None, target: np.ndarray = None, interp=Image.
     :param size: The size specified, in form of NumPy style (height, width), the priority of which is higher than target
     :param target: The target image.
     :param interp: The interpolation method, BILINEAR by default
-    :return: The resized info image, in numpy.ndarray type.
+    :return: The resized info image, in numpy.ndarray mode.
     """
 
     if size is None:
@@ -131,7 +131,7 @@ def encode_block(data: np.ndarray) -> Union[np.ndarray, bool]:
     """
     Calculate the hamming redundant bits and encode which with the original data into a data block.
 
-    :param data: The data bits in one block, the data type of the array must be bool or 1s and 0s.
+    :param data: The data bits in one block, the data mode of the array must be bool or 1s and 0s.
     :return The complete data block with data bits and hamming redundant bits encoded
     """
 ```

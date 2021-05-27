@@ -125,7 +125,7 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# Pyre type checker
+# Pyre mode checker
 .pyre/
 
 # workspace

@@ -1,6 +1,12 @@
 from PIL import Image
 import numpy as np
 
+from hamming import str_pad
+
+"""
+Functions that may be useful.
+"""
+
 
 def msb(array: np.ndarray, bits: int = 4) -> np.ndarray:
     """
@@ -28,7 +34,7 @@ def lsb(array: np.ndarray, bits: int = 4) -> np.ndarray:
 
 def resize(info: np.ndarray, size=None, target: np.ndarray = None, interp=Image.BILINEAR) -> np.ndarray:
     """
-    Resize the info image into the size specified. The image is firstly converted into Pillow.Image type, then the
+    Resize the info image into the size specified. The image is firstly converted into Pillow.Image mode, then the
     builtin resize function is invoked.
     Be REALLY CAREFUL about the different convention of dimension in Pillow and NumPy
 
@@ -36,7 +42,7 @@ def resize(info: np.ndarray, size=None, target: np.ndarray = None, interp=Image.
     :param size: The size specified, in form of NumPy style (height, width), the priority of which is higher than target
     :param target: The target image.
     :param interp: The interpolation method, BILINEAR by default
-    :return: The resized info image, in numpy.ndarray type.
+    :return: The resized info image, in numpy.ndarray mode.
     """
 
     if size is None:
@@ -95,4 +101,37 @@ def str_tile(raw: str, length: int) -> str:
     :return: The tiled string.
     """
 
-    return raw * (length // len(raw)) + raw[:len(raw) - (length - 1) % len(raw) - 1]
+    return raw * (length // len(raw)) + raw[:length % len(raw)]
+
+
+def noise(img: np.ndarray, density: float) -> np.ndarray:
+    """
+    The input image must in dimension of (height, width, channel)
+
+    :param img:
+    :param density:
+    :param mode:
+    :return:
+    """
+
+    row, col, _ = img.shape
+    noise_array = np.frompyfunc(lambda x: 255 if np.random.rand() < density else x, 1, 1)(np.zeros((row, col)))
+    return np.clip(np.array([noise_array for i in range(3)]).transpose() + img, 0, 255).astype(np.uint8)
+
+
+def similarity(raw: str, target: str, hamming=False) -> float:
+    """
+    Compare the similarity of the two strings. The raw string is tiled to conform with the length of the target string.
+    If Hamming encoding is enabled, the protective characters are padded to the raw string first.
+
+    :param raw: The raw string.
+    :param target: The target string, for example, the string decoded from the image.
+    :param hamming: If Hamming encoding is enabled, the protective bits are padded to the raw string.
+    :return: The similarity of the two strings.
+    """
+
+    if hamming:
+        raw = str_pad(raw)
+    raw = str_tile(raw, len(target))
+
+    return sum([raw[i] is target[i] for i in range(len(raw))]) / len(raw)
