@@ -52,7 +52,7 @@ def lsb(array: np.ndarray, bits: int = 4) -> np.ndarray:
         for k in range(ch)]).reshape(row, col, ch)
 ```
 
-However, `Python` provides a variety of flexible bit operation, and `NumPy` offers `frompyfunc()` function to conduct an operation over the total array. In such case, we may directly utilizing bit shifting operators.
+However, `Python` provides a variety of flexible bit operation, and `NumPy` offers `frompyfunc()` function to conduct an operation over the total array, and also supports the broadcasting of bit operators. In such case, we may directly utilizing bit shifting operators.
 
 For obtaining the most significant bits, simply do bit right shift.
 
@@ -116,13 +116,103 @@ Be careful that, the dimension conventions in `NumPy` and `Pillow` are different
 
 #### Image Encryption
 
+With the functions predefined, and the broadcasting feature of bit operators in `NumPy` we may easily implement the image encryption. The function is defined as `write.imgwrite()`.
+
+```python
+def imgwrite(info: np.ndarray = sherlock, target: np.ndarray = sevilla, bits: int = 4,
+             interp=Image.BILINEAR) -> Union[bool, np.ndarray]:
+    """
+    Encrypt info into an image. If the dimension of the image to be encrypted and the target is not compatible,
+    the info image is automatically stretched.
+
+    :param info: The image to be encrypted, sherlock.jpg by default
+    :param target: The image into which the info is encrypted, sevilla.jpg by default
+    :param bits: The number of least significant bits chosen, 4 by default
+    :param interp: The interpolation method, would be used when automatically resize takes place, BILINEAR by default
+    :return: The image with encrypted information, in numpy.ndarray mode, False if encryption failed
+    """
+
+    if not isinstance(info, np.ndarray) or not isinstance(target, np.ndarray):
+        warn('Incompatible data mode, numpy.ndarray is required.')
+        return False
+
+    _info = np.array(info)
+    if info.shape != target.shape:
+        warn('Incompatible dimension, image is automatically reshaped to the size of the target.')
+        _info = resize(info, target=target, interp=interp)
+
+    return (msb(target, bits) << bits) + msb(_info, bits)
+```
+
+In this function, when the dimension is not compatible, resize is automatically introduced, and user warning is thrown in such case.
+
+```mermaid
+graph LR
+A[Extract MSB in Target Image] --Left-Shift Operation-->
+B((+))
+C[Extract MSB in Info Image] --> B -->
+D[Resultant Image]
+```
+
 #### Image Decryption
+
+Similar to decryption, the key function is realized within one line of code in `read.imgread()`.
+
+```python
+def imgread(img: np.ndarray, bits: int = 4, random: bool = True) -> Union[bool, np.ndarray]:
+    """
+    Read encrypted image.
+
+    :param img: The image carrying the encrypted image.
+    :param bits: The number of least significant bits used fro steganography.
+    :param random: Fill the least significant bits of the decrypted image with random values, disabled by default
+    :return: The decrypted image.
+    """
+
+    if not isinstance(img, np.ndarray):
+        warn('Incompatible data mode, numpy.ndarray is required.')
+        return False
+
+    return (lsb(img, bits) << bits) + (np.random.randint(0, 15, size=img.size).reshape(img.shape) if random else 0)
+```
+
+Note that, random bits are appended to the LSB of the decrypted image, since the least significant bits are likely to behave randomly in nature.
+
+```mermaid
+graph LR
+A[Extract LSB] -->
+B[Left-Shift Operation] -->
+C[Random-Bits Appending]
+```
 
 ### Hamming Encoding and Decoding
 
+To start with, several features of the Hamming code is predefined.
+
+- The size of the hamming block must be $2^n$ by $2^n$, in which $n$ is an integer greater than $1$.
+- With zero indexing, the parity bits are those bits whose indexes are the interger power of $2$, for example, `1`, `2`, `4`, etc.
+- The `0`-th bit in the Hamming block is also an parity bit, which is responsible for the global parity check.
+- The parity bits are adjusted to satisfy that the number of `1` bits in each parity group is even.
+
+![A common Hamming 4 by 4 block](fig/block.png)
+
+This figure presents a common 4 by 4 hamming block, its `0`, `1`, `2`, `4` and `8`-th bits are the parity redundant bits. The parity groups distribution is shown in the table below, in row-major, `0`-index order.
+
+| Parity Bit | The Binary Index | Parity Group                   |
+| :--------: | :--------------: | ------------------------------ |
+|    `0`     |      `0000`      | The whole data block           |
+|    `1`     |      `0001`      | The `1`st and the `3`rd column |
+|    `2`     |      `0010`      | The `2`st and the `3`rd column |
+|    `4`     |      `0100`      | The `1`st and the `3`rd row    |
+|    `8`     |      `1000`      | The `2`st and the `3`rd row    |
+
+The parity bits (`0`-th) excluded have special binary address, which has only one `1` bit, and the addressed of the data bits in their corresponding parity group all having `1` bit in that particular position. In such way, the Hamming block can be extended to larger size, and the parity group can be found and evaluated by simple justifications.
+
+It can also be easily proved that, with such number of parity bits, we can determine with certitude the location of a single bit-flip.
+
 #### Encode One Data Block
 
-This function converts a series of data bits into single data block with Hamming redundant bits added, if the data bits provided does not correspond with a possible size of a $2^n$ by $2^n$ data block, the function returns false and gives warning.
+The function `hamming.encode_block()` converts a series of data bits into single data block with Hamming redundant bits added, if the data bits provided does not correspond with a possible size of a $2^n$ by $2^n$ data block, the function returns `False` and gives warning.
 
 First, define the function.
 
@@ -194,7 +284,27 @@ Take the parity bit at index `2` in a `4` by `4` block for example, the binary i
 - The indexes of the parity group is specifically chosen, so that the binary indexes of which all have `1` digit in the corresponding position.
 - `0 and 1 = 0`, `0 and 0 = 0`, `1 and 0 = 0`, `1 and 1 = 1`
 
-Therefore, when the data bit is not in the parity bit, the result of bitwise AND operation is zero.
+Therefore, when the data bit is not in the parity bit, the result of bitwise `AND` operation is zero.
+
+It is already known that, the goal of calculating the parity bit is to make the number of `1` bits in the parity group even. Another useful fact is that, the `XOR` has the following features.
+
+| Number |    Value    | `XOR` Result |
+| :----: | :---------: | :----------: |
+|  Even  |     `1`     |     `0`      |
+|  Odd   |     `1`     |     `1`      |
+|  Even  |     `0`     |     `0`      |
+|  Odd   |     `0`     |     `0`      |
+|   \    | `1` and `0` |     `1`      |
+
+With such characteristics, we may easily find the position of the parity bits, the corresponding parity groups, and adjust the parity bits with an `XOR` operation.
+
+```python
+for p in range(n << 1):
+    block[1 << p] = reduce(lambda x, y: x ^ y, [bit for i, bit in enumerate(block)if 1 << p & i])
+block[0] = reduce(lambda x, y: x ^ y, block[1:])
+
+return np.array(block).reshape(1 << n, 1 << n)
+```
 
 #### Encode Several Data Blocks
 
