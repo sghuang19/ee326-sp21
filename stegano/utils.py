@@ -12,9 +12,9 @@ def msb(array: np.ndarray, bits: int = 4) -> np.ndarray:
     """
     Extract the most significant bits from the array
 
-    :param array:
+    :param array: The array from which the most significant bits are extracted.
     :param bits: number of msb
-    :return: The most significant bits stored in numpy.ndarray, in string datatype
+    :return: The most significant bits stored in numpy.ndarray, in np.uint8 datatype
     """
 
     return array >> bits
@@ -26,7 +26,7 @@ def lsb(array: np.ndarray, bits: int = 4) -> np.ndarray:
 
     :param array: The array from which the least significant bits are extracted.
     :param bits: Number of the least significant bits to be extracted.
-    :return: The least significant bits stored in numpy.ndarray, in string datatype
+    :return: The least significant bits stored in numpy.ndarray, in np.uint8 datatype
     """
 
     return msb(array << bits)

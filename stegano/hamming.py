@@ -89,10 +89,10 @@ def decode_block(block: np.ndarray) -> Union[np.ndarray, bool]:
         flip = reduce(lambda x, y: x ^ y, [i for i, bit in enumerate(_block) if bit] + [1, 1])
 
         if flip:
+            if reduce(lambda x, y: x ^ y, _block):
+                warn('Two or more bit-flips occur, self-correction failed.')
             warn("Single bit-flip at index {} corrected".format(flip))
             _block[flip] = not _block[flip]
-        elif reduce(lambda x, y: x ^ y, _block):
-            warn('Two or more bit-flips occur, self-correction failed.')
 
         return np.array([bit for i, bit in enumerate(_block) if i and i & i - 1])
 
