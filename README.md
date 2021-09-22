@@ -21,6 +21,18 @@ The complete resources can be retrieved at [our GitHub repo](https://github.com/
 
 [^stegano]: [Wikipedia: Steganography](https://en.wikipedia.org/wiki/Steganography)
 
+The existing communication security is mainly divided into encryption and information hiding: encryption mainly operates on the secret information itself, but the plaintext after special processing is more likely to be suspected by the third party; Information hiding hides the existence of the secret data, which makes the secret data communicate covertly without the suspicion of the third party.
+
+Because every web site relies on multimedia, such as audio, video, and images. Steganography can embed secret information into digital media without damaging the quality of its carrier. The third party is neither aware of the existence of secret information nor aware of the existence of secret information. Therefore, key, digital signature and private information can be transmitted safely in an open environment (such as Internet or intranet).
+
+Steganalysis models can be divided into special steganalysis model and general steganalysis model. Because the special steganalysis model only aims at specific steganalysis algorithms and has poor detection effect for mismatched or unknown steganalysis algorithms, with the emergence of various kinds of adaptive steganalysis algorithms, the special steganalysis model is unable to do well and gradually withdraws from the historical stage, Universal steganalysis model has gradually become the mainstream steganalysis model.
+
+On the whole, steganography can be divided into three parts: encoder, decoder and discriminator. The encoder is responsible for embedding the hidden image into the original image, and the decoder is responsible for extracting the hidden image from the steganographic image. At the same time, the encoder and decoder should work together to ensure that the steganographic image is consistent with the original image as much as possible, Only in this way can the discriminator be cheated until the encoder can generate the steganographic image which is false but not true. That's how steganography works.
+
+As an early steganography method, LSB (least significant bit) is a steganography method based on the least significant bit of the image to modify and store information. Using the insensitivity of human eyes to color differences, the secret information is embedded into the least significant bit of the image through certain embedding methods, so that the information we need to hide is put into the least significant bit of the image through certain methods. LSB for the least significant bit is the replacement operation, the image format with LSB algorithm needs to be bitmap form, that is, the image can not be compressed, so LSB algorithm is mostly used in PNG, BMP and other spatial images.
+
+In this project, we will use LSB algorithm to achieve image steganography, a picture or a piece of text steganography in a carrier image. LSB is a typical non adaptive steganography algorithm. The idea of non adaptive steganography is that the less the pixel content in the carrier image is modified, the stronger the anti steganalysis ability of steganography algorithm is. Therefore, non adaptive steganography is usually combined with error correction coding (steganography code) to realize the specific embedding process.
+
 ### Self-Correction
 
 *Self-correction*, or particularly self-correction code is widely used in computer technology. In data transfer and storage, data is possible to be corrupted with either bit-flip or other physical forms of damage, such as dimmed or covered. Some specific ways of encoding an decoding data allows us to discover and even correct such data error, with a small cost of space and performance.
@@ -28,6 +40,12 @@ The complete resources can be retrieved at [our GitHub repo](https://github.com/
 >In computer science and telecommunication, *Hamming codes* are a family of linear error-correcting codes. Hamming codes can detect up to two-bit errors or correct one-bit errors without detection of uncorrected errors. By contrast, the simple parity code cannot correct errors, and can detect only an odd number of bits in error. Hamming codes are perfect codes, that is, they achieve the highest possible rate for codes with their block length and minimum distance of three. Richard W. Hamming invented Hamming codes in 1950 as a way of automatically correcting errors introduced by punched card readers. In his original paper, Hamming elaborated his general idea, but specifically focused on the Hamming (7, 4) code which adds three parity bits to four bits of data.[^hamming]
 
 [^hamming]: [Wikipedia: Hamming Code](https://en.wikipedia.org/wiki/Hamming_code)
+
+When a computer stores or moves data, data bit errors may occur. As a common self correcting coding technology, Hamming code is widely used in memory (RAM) to detect and correct single bit errors by inserting a verification code into the transmitted message stream.
+
+The main feature of Hamming code lies in its special parity bit setting. The parity bit is set at the position of $2^n$, and each parity bit is responsible for the parity check of a specific block, so that there are even `1` in the corresponding block. Through multiple parity checks, the location of the error can be determined, which is convenient to expand the scale and the proportion of redundant space is small.
+
+In this project, we will use Hamming code to realize the self correction of binary code, and combine this self correction technology with image steganography to enhance the robustness of image steganography, so that the steganographic information in the image has a certain ability to resist noise interference. Finally, we introduce noise to test the accuracy of binary coding after the steganographic information passes through AWGN channel.
 
 ## Methodology
 
